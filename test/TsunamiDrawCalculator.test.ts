@@ -1,8 +1,9 @@
 import { expect } from 'chai';
 import { deployMockContract, MockContract } from 'ethereum-waffle';
 import { utils, Contract, ContractFactory, Signer, Wallet, BigNumber} from 'ethers';
-import { ethers, artifacts } from 'hardhat';
+import { ethers, artifacts, tenderly, network } from 'hardhat';
 import { Interface } from 'ethers/lib/utils';
+import { hrtime } from 'process';
 
 
 const { getSigners, provider } = ethers;
@@ -83,6 +84,14 @@ describe('TsunamiDrawCalculator', () => {
         [ wallet1, wallet2, wallet3 ] = await getSigners();
         drawCalculator = await deployDrawCalculator(wallet1)
 
+        // console.log(network)
+
+        await tenderly.persistArtifacts({
+            name: "TsunamiDrawCalculatorHarness",
+            address:drawCalculator.address
+          });
+
+
         let ticketArtifact = await artifacts.readArtifact('ITicket')
         ticket = await deployMockContract(wallet1, ticketArtifact.abi)
 
@@ -110,6 +119,12 @@ describe('TsunamiDrawCalculator', () => {
             }
             const result = await findWinningNumberForUser(wallet1.address, 3, params)
         })
+
+        it('gas profiles', async ()=>{
+            const gasTestFactory = await ethers.getContractFactory("ConsoleTest")
+            const consoleTest = await gasTestFactory.deploy()
+            await consoleTest.testConsole()
+        })
     })
 
     describe('admin functions', ()=>{
@@ -124,9 +139,10 @@ describe('TsunamiDrawCalculator', () => {
                 range: BigNumber.from(5),
                 pickCost: BigNumber.from(utils.parseEther("1")),
             }
-
-            expect(await drawCalculator.setDrawSettings(params)).
-                to.emit(drawCalculator, "DrawSettingsSet")
+            const result = await drawCalculator.setDrawSettings(params)
+            expect(result).to.emit(drawCalculator, "DrawSettingsSet")
+            console.log(result.hash)
+            // await tenderly.push()
 
             await expect(drawCalculator.connect(wallet2).setDrawSettings(params)).to.be.reverted
         })
@@ -165,6 +181,7 @@ describe('TsunamiDrawCalculator', () => {
     describe('getValueAtIndex()', ()=>{
         it('should return the value at 0 index with full range, no bias', async ()=>{
             const result = await drawCalculator.callStatic.getValueAtIndex("63","0","16")
+            console.log("getValueAtIndex() gasUsed ", (await drawCalculator.estimateGas.getValueAtIndex("63","0","16")).toString())
             expect(result).to.equal(15)
         })
         it('should return the value at 1 index with full range, no bias', async ()=>{
@@ -190,7 +207,7 @@ describe('TsunamiDrawCalculator', () => {
     })
 
     describe('calculate()', () => {
-        it('should calculate and win grand prize', async () => {
+        it.only('should calculate and win grand prize', async () => {
             const winningNumber = utils.solidityKeccak256(["address"], [wallet1.address])
             const winningRandomNumber = utils.solidityKeccak256(["bytes32", "uint256"],[winningNumber, 1])
         
@@ -239,6 +256,17 @@ describe('TsunamiDrawCalculator', () => {
                 prizes,
                 pickIndices
             )).to.equal(utils.parseEther("80"))
+
+            const twoPicksResult = await drawCalculator.estimateGas.calculate(
+                wallet1.address,
+                [winningRandomNumber, winningRandomNumber],
+                [timestamp1, timestamp2],
+                prizes,
+                pickIndices)
+        
+                
+
+            console.log("GasUsed for 2 pick calculate(): ",twoPicksResult.toString())
         
         })
 

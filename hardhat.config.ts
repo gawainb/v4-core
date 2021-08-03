@@ -5,6 +5,7 @@ import 'hardhat-deploy';
 import 'hardhat-deploy-ethers';
 import 'hardhat-gas-reporter';
 import 'solidity-coverage';
+import "@tenderly/hardhat-tenderly"
 
 import { HardhatUserConfig } from 'hardhat/config';
 
@@ -50,6 +51,10 @@ const config: HardhatUserConfig = {
         }
       }
     ]
+  },
+  tenderly: {
+    username: "aodhgan",
+    project: "dev"
   }
 };
 

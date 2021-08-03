@@ -56,7 +56,7 @@ contract TsunamiDrawCalculator is IDrawCalculator, OwnableUpgradeable {
   ///@return The amount of prize to award to the user 
   function calculate(address user, uint256[] calldata winningRandomNumbers, uint32[] calldata timestamps, uint256[] calldata prizes, bytes calldata data) 
     external override view returns (uint256){
-    
+    console.log("gasLeft 1", gasleft());
     require(winningRandomNumbers.length == timestamps.length && timestamps.length == prizes.length, "DrawCalc/invalid-calculate-input-lengths");
 
     uint256[][] memory pickIndices = abi.decode(data, (uint256 [][]));
@@ -68,10 +68,11 @@ contract TsunamiDrawCalculator is IDrawCalculator, OwnableUpgradeable {
     DrawSettings memory settings = drawSettings; //sload
 
     uint256 prize = 0;
-    
+    console.log("gasLeft 2", gasleft());
     for (uint256 index = 0; index < winningRandomNumbers.length; index++) {
       prize += _calculate(winningRandomNumbers[index], prizes[index], userBalances[index], userRandomNumber, pickIndices[index], settings);
     }
+    console.log("gasLeft 7", gasleft());
     return prize;
   }
 
@@ -88,7 +89,7 @@ contract TsunamiDrawCalculator is IDrawCalculator, OwnableUpgradeable {
   {
     uint256 totalUserPicks = balance / _drawSettings.pickCost;
     uint256 pickPayoutPercentage = 0;
-
+    console.log("gasLeft 3", gasleft());
     for(uint256 index  = 0; index < picks.length; index++){
       uint256 randomNumberThisPick = uint256(keccak256(abi.encode(userRandomNumber, picks[index])));
       require(picks[index] <= totalUserPicks, "DrawCalc/insufficient-user-picks");
@@ -103,18 +104,26 @@ contract TsunamiDrawCalculator is IDrawCalculator, OwnableUpgradeable {
   ///@param _drawSettings The parameters associated with the draw
   ///@return percentage of the Draw's Prize awardable to that user
   function calculatePickFraction(uint256 randomNumberThisPick, uint256 winningRandomNumber, DrawSettings memory _drawSettings)
-    internal pure returns(uint256) {
+    internal view returns(uint256) {
     
     uint256 prizeFraction = 0;
     uint256 numberOfMatches = 0;
-    
-    for(uint256 matchIndex = 0; matchIndex < _drawSettings.matchCardinality; matchIndex++){      
-      if(_getValueAtIndex(randomNumberThisPick, matchIndex, _drawSettings.range) == _getValueAtIndex(winningRandomNumber, matchIndex, _drawSettings.range)){
+    uint256 _matchCardinality = _drawSettings.matchCardinality;
+
+    console.log("gasLeft 4", gasleft());
+    for(uint256 matchIndex = 0; matchIndex < _matchCardinality; matchIndex++){
+      console.log("gasLeft 4.1", gasleft());     
+      uint256 value1 =  _getValueAtIndex(randomNumberThisPick, matchIndex, _drawSettings.range);
+      console.log("gasLeft 4.2", gasleft());     
+      uint256 value2 = _getValueAtIndex(winningRandomNumber, matchIndex, _drawSettings.range);
+      if(value1 == value2){
           numberOfMatches++;
       }          
     }
+    console.log("gasLeft 4.5", gasleft());
+    uint256 prizeDistributionIndex = _matchCardinality - numberOfMatches; // prizeDistributionIndex == 0 : top prize, ==1 : runner-up prize etc
     
-    uint256 prizeDistributionIndex = _drawSettings.matchCardinality - numberOfMatches; // prizeDistributionIndex == 0 : top prize, ==1 : runner-up prize etc
+    console.log("gasLeft 5", gasleft());
     
     // if prizeDistibution > distribution lenght -> there is no prize at that index
     if(prizeDistributionIndex < _drawSettings.distributions.length){ // they are going to receive prize funds
@@ -122,15 +131,23 @@ contract TsunamiDrawCalculator is IDrawCalculator, OwnableUpgradeable {
       uint256 prizePercentageAtIndex = _drawSettings.distributions[prizeDistributionIndex];
       prizeFraction = prizePercentageAtIndex / numberOfPrizesForIndex;
     }
+     console.log("gasLeft 6", gasleft());
     return prizeFraction;
   }
 
   ///@notice helper function to return the unbiased 4-bit value within a word at a specified index
-  ///@param word word to index
-  ///@param index index to index (max 15)
-  function _getValueAtIndex(uint256 word, uint256 index, uint8 _range) internal pure returns(uint256) {
-    uint256 mask =  (uint256(15)) << (index * 4);
-    return UniformRandomNumber.uniform(uint256((uint256(word) & mask) >> (index * 4)), _range);
+  ///@param _word word to index
+  ///@param _index index to index (max 15)
+  function _getValueAtIndex(uint256 _word, uint256 _index, uint8 _range) internal view returns(uint256) {
+    console.log("gasLeft 4.5 ", gasleft());
+    uint256 nibbleIndex = _index * 4;
+
+    uint256 mask =  (uint256(15)) << nibbleIndex; // 1 MUL (5 gas), 1 SHL (3 gas), 
+    console.log("gasLeft 4.6 ", gasleft());
+    // return UniformRandomNumber.uniform(uint256((uint256(_word) & mask) >> (_index * 4)), _range);
+    uint256 result = uint256((uint256(_word) & mask) >> nibbleIndex); 
+    console.log("gasLeft 4.7 ", gasleft()); 
+    return result;
   }
 
   ///@notice Set the DrawCalculators DrawSettings

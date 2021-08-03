@@ -11,27 +11,34 @@ const networks: HardhatUserConfig['networks'] = {
     allowUnlimitedContractSize: true,
   },
   localhost: {
-    chainId: 1,
+    chainId:31337,
     url: 'http://127.0.0.1:8545',
     allowUnlimitedContractSize: true,
+    hardfork: "berlin"
   },
+  // hardhat: {
+  //   chainId:31337,
+  //   allowUnlimitedContractSize: true,
+  //   hardfork: "berlin"
+  // },
 };
 
-if (alchemyUrl && process.env.FORK_ENABLED && mnemonic) {
-  networks.hardhat = {
-    chainId: 1,
-    forking: {
-      url: alchemyUrl,
-    },
-    accounts: {
-      mnemonic,
-    },
-  };
-} else {
-  networks.hardhat = {
-    allowUnlimitedContractSize: true,
-  };
-}
+// if (alchemyUrl && process.env.FORK_ENABLED && mnemonic) {
+//   console.log("fork enabled")
+//   networks.hardhat = {
+//     chainId: 1,
+//     forking: {
+//       url: alchemyUrl,
+//     },
+//     accounts: {
+//       mnemonic,
+//     },
+//   };
+// } else {
+//   networks.hardhat = {
+//     allowUnlimitedContractSize: true,
+//   };
+// }
 
 if (mnemonic) {
   networks.xdai = {
