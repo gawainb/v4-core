@@ -26,14 +26,24 @@ contract TsunamiDrawCalculator is IDrawCalculator, OwnableUpgradeable {
   ///@param distributions Array of prize distribution percentages, expressed in fraction form with base 1e18. Max sum of these <= 1 Ether.
   struct DrawSettings {
     uint8 range; 
-    uint8 nibble;
-    uint8 nibbleSize;
+    // uint8 nibble;
+    // uint8 nibbleSize;
     uint16 matchCardinality;
     uint224 pickCost;
     uint256[] distributions; // in order: index0: grandPrize, index1: runnerUp, etc. 
   }
   ///@notice storage of the DrawSettings associated with this Draw Calculator. NOTE: mapping? 
   DrawSettings public drawSettings;
+
+  uint8 constant NIBBLE = 15;
+  uint8 constant NIBBLE_SIZE = 4;
+
+  struct IndexValues {
+    uint8 nibble;
+    uint8 nibbleSize;
+  }
+
+  // IndexValues constant _indexVals = IndexValues({nibble: 15, nibbleSize: 4}); // not implemented yet
 
   ///@notice Emitted when the DrawParams are set/updated
   event DrawSettingsSet(DrawSettings _drawSettings);
@@ -94,10 +104,15 @@ contract TsunamiDrawCalculator is IDrawCalculator, OwnableUpgradeable {
     uint256 totalUserPicks = balance / _drawSettings.pickCost;
     uint256 pickPayoutPercentage = 0;
     console.log("gasLeft 3", gasleft());
+
+    IndexValues memory _indexValues = IndexValues({
+      nibble: NIBBLE,
+      nibbleSize: NIBBLE_SIZE
+    });
     for(uint256 index  = 0; index < picks.length; index++){
       uint256 randomNumberThisPick = uint256(keccak256(abi.encode(userRandomNumber, picks[index])));
       require(picks[index] <= totalUserPicks, "DrawCalc/insufficient-user-picks");
-      pickPayoutPercentage += calculatePickFraction(randomNumberThisPick, winningRandomNumber, _drawSettings);
+      pickPayoutPercentage += calculatePickFraction(randomNumberThisPick, winningRandomNumber, _drawSettings, _indexValues);
     }
     return (pickPayoutPercentage * prize) / 1 ether;
   }
@@ -107,7 +122,7 @@ contract TsunamiDrawCalculator is IDrawCalculator, OwnableUpgradeable {
   ///@param winningRandomNumber The winning number for this draw
   ///@param _drawSettings The parameters associated with the draw
   ///@return percentage of the Draw's Prize awardable to that user
-  function calculatePickFraction(uint256 randomNumberThisPick, uint256 winningRandomNumber, DrawSettings memory _drawSettings)
+  function calculatePickFraction(uint256 randomNumberThisPick, uint256 winningRandomNumber, DrawSettings memory _drawSettings, IndexValues memory _indexValues)
     internal view returns(uint256) {
     
     uint256 prizeFraction = 0;
@@ -115,8 +130,14 @@ contract TsunamiDrawCalculator is IDrawCalculator, OwnableUpgradeable {
     uint256 _matchCardinality = _drawSettings.matchCardinality;
 
     uint8 _drawSettingsRange = _drawSettings.range;
-    uint8 _drawSettingsNibble = _drawSettings.nibble;
-    uint8 _drawSettingNibbleSize = _drawSettings.nibbleSize;
+    // uint8 _drawSettingsNibble = _drawSettings.nibble;
+    // uint8 _drawSettingNibbleSize = _drawSettings.nibbleSize;
+    // uint8 _drawSettingsNibble = NIBBLE;
+    // uint8 _drawSettingNibbleSize = NIBBLE_SIZE;
+
+    uint8 _drawSettingsNibble = _indexValues.nibble;
+    uint8 _drawSettingNibbleSize = _indexValues.nibbleSize;
+
 
     console.log("gasLeft 4", gasleft());
     for(uint256 matchIndex = 0; matchIndex < _matchCardinality; matchIndex++){

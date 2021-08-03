@@ -14,8 +14,8 @@ type DrawSettings  = {
     matchCardinality: BigNumber
     pickCost: BigNumber
     distributions: BigNumber[]
-    nibble: BigNumber
-    nibbleSize: BigNumber
+    // nibble: BigNumber
+    // nibbleSize: BigNumber
 }
 
 describe('TsunamiDrawCalculator', () => {
@@ -102,8 +102,8 @@ describe('TsunamiDrawCalculator', () => {
             range: BigNumber.from(10),
             pickCost: BigNumber.from(utils.parseEther("1")),
             matchCardinality: BigNumber.from(8),
-            nibble: BigNumber.from(15),
-            nibbleSize: BigNumber.from(4)
+            // nibble: BigNumber.from(15),
+            // nibbleSize: BigNumber.from(4)
         }
         await drawCalculator.initialize(ticket.address, drawSettings)
 
@@ -120,8 +120,8 @@ describe('TsunamiDrawCalculator', () => {
                         ],
                 range: BigNumber.from(5),
                 pickCost: BigNumber.from(utils.parseEther("1")),
-                nibble: BigNumber.from(15),
-                nibbleSize: BigNumber.from(4)
+                // nibble: BigNumber.from(15),
+                // nibbleSize: BigNumber.from(4)
             }
             const result = await findWinningNumberForUser(wallet1.address, 3, params)
         })
@@ -144,8 +144,8 @@ describe('TsunamiDrawCalculator', () => {
                         ],
                 range: BigNumber.from(5),
                 pickCost: BigNumber.from(utils.parseEther("1")),
-                nibble: BigNumber.from(15),
-                nibbleSize: BigNumber.from(4)
+                // nibble: BigNumber.from(15),
+                // nibbleSize: BigNumber.from(4)
             }
             const result = await drawCalculator.setDrawSettings(params)
             expect(result).to.emit(drawCalculator, "DrawSettingsSet")
@@ -165,8 +165,8 @@ describe('TsunamiDrawCalculator', () => {
                         ],
                 range: BigNumber.from(5),
                 pickCost: BigNumber.from(utils.parseEther("1")),
-                nibble: BigNumber.from(15),
-                nibbleSize: BigNumber.from(4)
+                // nibble: BigNumber.from(15),
+                // nibbleSize: BigNumber.from(4)
             }
             await expect(drawCalculator.setDrawSettings(params)).
                 to.be.revertedWith("DrawCalc/distributions-gt-100%")
@@ -182,8 +182,8 @@ describe('TsunamiDrawCalculator', () => {
                         ],
                 range: BigNumber.from(16),
                 pickCost: BigNumber.from(utils.parseEther("1")),
-                nibble: BigNumber.from(15),
-                nibbleSize: BigNumber.from(4)
+                // nibble: BigNumber.from(15),
+                // nibbleSize: BigNumber.from(4)
             }
             await expect(drawCalculator.setDrawSettings(params)).
                 to.be.revertedWith("DrawCalc/range-gt-15")
@@ -343,8 +343,8 @@ describe('TsunamiDrawCalculator', () => {
                         ],
                 range: BigNumber.from(4),
                 pickCost: BigNumber.from(utils.parseEther("1")),
-                nibble: BigNumber.from(15),
-                nibbleSize: BigNumber.from(4)
+                // nibble: BigNumber.from(15),
+                // nibbleSize: BigNumber.from(4)
             }
             await drawCalculator.setDrawSettings(params)
 
@@ -367,8 +367,8 @@ describe('TsunamiDrawCalculator', () => {
                         ],
                 range: BigNumber.from(4),
                 pickCost: BigNumber.from(utils.parseEther("1")),
-                nibble: BigNumber.from(15),
-                nibbleSize: BigNumber.from(4)
+                // nibble: BigNumber.from(15),
+                // nibbleSize: BigNumber.from(4)
             }
             await drawCalculator.setDrawSettings(params)
 
