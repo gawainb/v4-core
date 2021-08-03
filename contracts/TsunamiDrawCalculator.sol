@@ -19,11 +19,15 @@ contract TsunamiDrawCalculator is IDrawCalculator, OwnableUpgradeable {
 
   ///@notice Draw settings struct
   ///@param range Decimal representation of the range of number of bits consider within a 4-bit number. Max value 15.
+  ///@param nibble Number of bits considered. Constant at 15. TODO: Should this be a global constant/immutable outside DrawSettings?
+  ///@param nibbleSize Number of bits considered. Constant at 4. TODO: Should this be a global constant/immutable outside DrawSettings?
   ///@param matchCardinality The number of 4-bit matches within the 256 word. Max value 64 (4*64=256).
   ///@param pickCost Amount of ticket required per pick
   ///@param distributions Array of prize distribution percentages, expressed in fraction form with base 1e18. Max sum of these <= 1 Ether.
   struct DrawSettings {
     uint8 range; 
+    uint8 nibble;
+    uint8 nibbleSize;
     uint16 matchCardinality;
     uint224 pickCost;
     uint256[] distributions; // in order: index0: grandPrize, index1: runnerUp, etc. 
@@ -110,15 +114,28 @@ contract TsunamiDrawCalculator is IDrawCalculator, OwnableUpgradeable {
     uint256 numberOfMatches = 0;
     uint256 _matchCardinality = _drawSettings.matchCardinality;
 
+    uint8 _drawSettingsRange = _drawSettings.range;
+    uint8 _drawSettingsNibble = _drawSettings.nibble;
+    uint8 _drawSettingNibbleSize = _drawSettings.nibbleSize;
+
     console.log("gasLeft 4", gasleft());
     for(uint256 matchIndex = 0; matchIndex < _matchCardinality; matchIndex++){
-      console.log("gasLeft 4.1", gasleft());     
-      uint256 value1 =  _getValueAtIndex(randomNumberThisPick, matchIndex, _drawSettings.range);
+      console.log("gasLeft 4.0", gasleft());
+
+      uint256 _matchIndex = matchIndex * _drawSettingNibbleSize;
+      console.log("gasLeft 4.1", gasleft());
+      uint256 value1 =  _getValueAtIndex(randomNumberThisPick, _matchIndex, _drawSettingsRange, _drawSettingsNibble);
+      
       console.log("gasLeft 4.2", gasleft());     
-      uint256 value2 = _getValueAtIndex(winningRandomNumber, matchIndex, _drawSettings.range);
+      
+      uint256 value2 = _getValueAtIndex(winningRandomNumber, _matchIndex, _drawSettingsRange, _drawSettingsNibble);
+      
+      console.log("gasLeft 4.3", gasleft());     
+      
       if(value1 == value2){
           numberOfMatches++;
       }          
+      console.log("gasLeft 4.4", gasleft());     
     }
     console.log("gasLeft 4.5", gasleft());
     uint256 prizeDistributionIndex = _matchCardinality - numberOfMatches; // prizeDistributionIndex == 0 : top prize, ==1 : runner-up prize etc
@@ -137,16 +154,17 @@ contract TsunamiDrawCalculator is IDrawCalculator, OwnableUpgradeable {
 
   ///@notice helper function to return the unbiased 4-bit value within a word at a specified index
   ///@param _word word to index
-  ///@param _index index to index (max 15)
-  function _getValueAtIndex(uint256 _word, uint256 _index, uint8 _range) internal view returns(uint256) {
-    console.log("gasLeft 4.5 ", gasleft());
-    uint256 nibbleIndex = _index * 4;
+  ///@param _matchIndex index to index (max 15)
+  ///@param _nibble Constant 15
+  function _getValueAtIndex(uint256 _word, uint256 _matchIndex, uint8 _range, uint8 _nibble) internal view returns(uint256) {
+    console.log("gasLeft a", gasleft());
+    // uint256 nibbleIndex = _index * 4;
 
-    uint256 mask =  (uint256(15)) << nibbleIndex; // 1 MUL (5 gas), 1 SHL (3 gas), 
-    console.log("gasLeft 4.6 ", gasleft());
+    uint256 mask =  (uint256(_nibble)) << _matchIndex; // 1 MUL (5 gas), 1 SHL (3 gas), 
+    console.log("gasLeft b ", gasleft());
     // return UniformRandomNumber.uniform(uint256((uint256(_word) & mask) >> (_index * 4)), _range);
-    uint256 result = uint256((uint256(_word) & mask) >> nibbleIndex); 
-    console.log("gasLeft 4.7 ", gasleft()); 
+    uint256 result = uint256((uint256(_word) & mask) >> _matchIndex); 
+    console.log("gasLeft c", gasleft()); 
     return result;
   }
 
