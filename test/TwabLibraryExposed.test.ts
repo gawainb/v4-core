@@ -235,6 +235,54 @@ describe('TwabLibrary', () => {
     
   })
 
-  describe('nextTwabWithExpiry()', () => {
+  /*
+
+    pt:Ticket.test.ts: timestamp overflow Twab 0 { amount: 0, timestamp: 4294966296} +42ms
+    pt:Ticket.test.ts: timestamp overflow Twab 1 { amount: 200000000000000000000000, timestamp: 4294966496} +0ms
+    pt:Ticket.test.ts: timestamp overflow Twab 2 { amount: 380000000000000000000000, timestamp: 4294966696} +0ms
+    pt:Ticket.test.ts: timestamp overflow Twab 3 { amount: 700000000000000000000000, timestamp: 4294967096} +0ms
+    pt:Ticket.test.ts: timestamp overflow Twab 4 { amount: 980000000000000000000000, timestamp: 200} +0ms
+    pt:Ticket.test.ts: timestamp overflow Twab 5 { amount: 1100000000000000000000000, timestamp: 400} +0ms
+  */
+
+  context.only('with timestamp overflow', () => {
+    const currentBalance = toWei('500')
+    const nextTwabIndex = 6
+    const cardinality = 7
+    const twabs = [
+      { amount: 0,                          timestamp: 4294966296 },
+      { amount: 200000000000000000000000,   timestamp: 4294966496 },
+      { amount: 380000000000000000000000,   timestamp: 4294966696 },
+      { amount: 700000000000000000000000,   timestamp: 4294967096 },
+      { amount: 980000000000000000000000,   timestamp: 200 },
+      { amount: 1100000000000000000000000,  timestamp: 400 },
+    ]
+
+    beforeEach(async () => {
+      await twabLib.setTwabs(twabs)
+    })
+
+    describe('getAverageBalanceBetween()', () => {
+      it('should be accurate across the overflow boundary', async () => {
+        expect(await twabLib.getAverageBalanceBetween(
+          currentBalance,
+          nextTwabIndex - 1,
+          2**32 - 400,
+          2**32 + 400,
+          cardinality,
+          1000
+        )).to.equal(toWei('700'))
+      })
+    })
+
+    describe('getBalanceAt()', () => {
+      it('should get the balance and handle the overflow', async () => {
+        // expect(await ticket.getBalanceAt(wallet1.address, 2**32 + 200)).to.equal(toWei('600'))
+      })
+
+      it('should get the balance immediately before the overflow', async () => {
+        // expect(await ticket.getBalanceAt(wallet1.address, 2**32 - 200)).to.equal(toWei('700'))
+      })
+    })
   })
 });

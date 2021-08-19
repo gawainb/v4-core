@@ -46,8 +46,8 @@ library TwabContextLibrary {
 
   function getAverageBalanceBetween(
     TwabContext storage twabContext,
-    uint32 _startTime,
-    uint32 _endTime,
+    uint256 _startTime,
+    uint256 _endTime,
     uint32 _time
   ) internal view returns (uint256) {
     Context memory context = twabContext.context;

@@ -101,15 +101,15 @@ contract Ticket is ControlledToken, OwnableUpgradeable, TicketInterface {
   }
 
   function _getBalanceAt(address _user, uint256 _target) internal view returns (uint256) {
-    return userTwabs[_user].getBalanceAt(uint32(_target), uint32(block.timestamp));
+    return userTwabs[_user].getBalanceAt(uint32(_target), _timestamp());
   }
 
   function getAverageBalanceBetween(address _user, uint256 _startTime, uint256 _endTime) external override view returns (uint256) {
-    return _getAverageBalanceBetween(_user, uint32(_startTime), uint32(_endTime));
+    return _getAverageBalanceBetween(_user, _startTime, _endTime);
   }
 
-  function _getAverageBalanceBetween(address _user, uint32 _startTime, uint32 _endTime) internal view returns (uint256) {
-    return userTwabs[_user].getAverageBalanceBetween(_startTime, _endTime, uint32(block.timestamp));
+  function _getAverageBalanceBetween(address _user, uint256 _startTime, uint256 _endTime) internal view returns (uint256) {
+    return userTwabs[_user].getAverageBalanceBetween(_startTime, _endTime, _timestamp());
   }
 
   /// @notice Retrieves `_user` TWAB balances.
@@ -123,7 +123,7 @@ contract Ticket is ControlledToken, OwnableUpgradeable, TicketInterface {
     TwabContextLibrary.TwabContext storage twabContext = userTwabs[_user];
 
     for(uint256 i = 0; i < length; i++){
-      balances[i] = twabContext.getBalanceAt(_targets[i], uint32(block.timestamp));
+      balances[i] = twabContext.getBalanceAt(_targets[i], _timestamp());
     }
 
     return balances;
@@ -132,7 +132,7 @@ contract Ticket is ControlledToken, OwnableUpgradeable, TicketInterface {
   /// @notice Retrieves ticket TWAB `totalSupply`.
   /// @param _target Timestamp at which the reserved TWAB should be for.
   function getTotalSupply(uint32 _target) override external view returns (uint256) {
-    return totalSupplyTwab.getBalanceAt(_target, uint32(block.timestamp));
+    return totalSupplyTwab.getBalanceAt(_target, _timestamp());
   }
 
   /// @notice Retrieves ticket TWAB `totalSupplies`.
@@ -144,7 +144,7 @@ contract Ticket is ControlledToken, OwnableUpgradeable, TicketInterface {
 
     for(uint256 i = 0; i < length; i++){
       // console.log("getTotalSupplies: %s ", _targets[i]);
-      totalSupplies[i] = totalSupplyTwab.getBalanceAt(_targets[i], uint32(block.timestamp));
+      totalSupplies[i] = totalSupplyTwab.getBalanceAt(_targets[i], _timestamp());
     }
 
     return totalSupplies;
@@ -190,7 +190,7 @@ contract Ticket is ControlledToken, OwnableUpgradeable, TicketInterface {
     require(_sender != address(0), "ERC20: transfer from the zero address");
     require(_recipient != address(0), "ERC20: transfer to the zero address");
 
-    uint32 time = uint32(block.timestamp);
+    uint32 time = _timestamp();
 
     uint224 amount = uint224(_amount);
 
@@ -220,7 +220,7 @@ contract Ticket is ControlledToken, OwnableUpgradeable, TicketInterface {
     require(_to != address(0), "ERC20: mint to the zero address");
 
     uint224 amount = _amount.toUint224();
-    uint32 time = uint32(block.timestamp);
+    uint32 time = _timestamp();
 
     _beforeTokenTransfer(address(0), _to, _amount);
 
@@ -247,7 +247,7 @@ contract Ticket is ControlledToken, OwnableUpgradeable, TicketInterface {
     require(_from != address(0), "ERC20: burn from the zero address");
 
     uint224 amount = _amount.toUint224();
-    uint32 time = uint32(block.timestamp);
+    uint32 time = _timestamp();
 
     _beforeTokenTransfer(_from, address(0), _amount);
 
@@ -274,6 +274,10 @@ contract Ticket is ControlledToken, OwnableUpgradeable, TicketInterface {
     emit Transfer(_from, address(0), _amount);
 
     _afterTokenTransfer(_from, address(0), _amount);
+  }
+
+  function _timestamp() internal virtual view returns (uint32) {
+    return uint32(block.timestamp);
   }
 
 }

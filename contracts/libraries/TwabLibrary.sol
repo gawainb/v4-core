@@ -152,12 +152,16 @@ library TwabLibrary {
     });
   }
 
+  function adjustForOverflow(uint32 time, uint32 currentTime) internal pure returns (uint256) {
+
+  }
+
   function getAverageBalanceBetween(
     Twab[MAX_CARDINALITY] storage _twabs,
     uint224 _currentBalance,
     uint16 _twabIndex,
-    uint32 _startTime,
-    uint32 _endTime,
+    uint256 _startTime,
+    uint256 _endTime,
     uint16 _cardinality,
     uint32 _time
   ) internal view returns (uint256) {
@@ -178,8 +182,8 @@ library TwabLibrary {
       AvgHelper({
         twabIndex: _twabIndex,
         oldestTwabIndex: oldestTwabIndex,
-        startTime: _startTime,
-        endTime: _endTime,
+        startTime: uint32(_startTime),
+        endTime: uint32(_endTime),
         cardinality: _cardinality
       }),
       oldestTwab,
@@ -193,7 +197,7 @@ library TwabLibrary {
     AvgHelper memory helper,
     Twab memory _oldestTwab,
     uint32 _time
-  ) internal view returns (uint256) {
+  ) private view returns (uint256) {
     uint32 endTime = helper.endTime > _time ? _time : helper.endTime;
 
     Twab memory newestTwab = _twabs[helper.twabIndex];
@@ -202,7 +206,7 @@ library TwabLibrary {
     Twab memory endTwab = calculateTwab(_twabs, newestTwab, _oldestTwab, helper.twabIndex, helper.oldestTwabIndex, endTime, _currentBalance, helper.cardinality, _time);
 
     // Difference in amount / time
-    return (endTwab.amount - startTwab.amount) / (endTwab.timestamp - startTwab.timestamp);
+    return (endTwab.amount - startTwab.amount) / endTwab.timestamp.checkedSub(startTwab.timestamp, _time);
   }
 
   /// @notice Retrieves amount at `_target` timestamp
@@ -335,7 +339,7 @@ library TwabLibrary {
 
     // if we're in the same block, return
     if (newestTwab.timestamp == _time) {
-      console.log("OH SHIT!!!!!!!!!!!!!");
+      console.log("DUPLICATE !!!!!!!!!!!!! %s", _time);
       return (_nextTwabIndex, cardinality, newestTwab, false);
     }
 

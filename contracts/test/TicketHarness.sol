@@ -9,6 +9,9 @@ import "../Ticket.sol";
 contract TicketHarness is Ticket {
   using SafeCastUpgradeable for uint256;
 
+  bool useTimestamp;
+  uint32 timestamp;
+
   function flashLoan(address _to, uint256 _amount) external {
     _mint(_to, _amount);
     _burn(_to, _amount);
@@ -39,5 +42,18 @@ contract TicketHarness is Ticket {
 
   function getAverageBalanceTx(address _user, uint32 _startTime, uint32 _endTime) external returns (uint256) {
     return _getAverageBalanceBetween(_user, _startTime, _endTime);
+  }
+
+  function setTime(uint256 time) external {
+    useTimestamp = true;
+    timestamp = uint32(time);
+  }
+
+  function unsetTime() external {
+    useTimestamp = false;
+  }
+
+  function _timestamp() internal override view returns (uint32) {
+    return useTimestamp ? timestamp : super._timestamp();
   }
 }
